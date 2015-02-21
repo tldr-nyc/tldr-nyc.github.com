@@ -11,10 +11,10 @@ highlighter: pygments
 title : TL;DR-NYC
 tagline: Site Tagline
 author :
-  name : tldr
+  name : TL;DR-NYC
   email : tldr.nyc@gmail.com
   github : tldr-nyc
-  twitter : none
+  twitter : tldr_nyc
   feedburner : none
 
 # The production_url is only used when full-domain names are needed
