@@ -6,7 +6,7 @@ tags : [hello, world]
 ---
 {% include JB/setup %}
 
-Test123
+Syntax highlighting...
 
 ## Hello Word!
 
