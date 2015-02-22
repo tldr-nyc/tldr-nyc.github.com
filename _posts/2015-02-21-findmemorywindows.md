@@ -1,8 +1,8 @@
 ---
 layout: post
 title: "findMemoryWindows()"
-description: ""
 category: exploit
+tagline: "Supporting tagline"
 tags: [exploit]
 ---
 {% include JB/setup %}
