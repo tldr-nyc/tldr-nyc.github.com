@@ -33,15 +33,29 @@ puts 'Hello world'
 ### IDA Pro
 
 {% highlight Assembly %}
-.text:00000000004004D0 main proc near
-.text:00000000004004D0 48 83 EC 08 sub rsp, 8
-.text:00000000004004D4 BF E8 05 40 00 mov edi, offset format ; "hello, world\n"
-.text:00000000004004D9 31 C0 xor eax, eax
-.text:00000000004004DB E8 D8 FE FF FF call _printf
-.text:00000000004004E0 31 C0 xor eax, eax
-.text:00000000004004E2 48 83 C4 08 add rsp, 8
-.text:00000000004004E6 C3 retn
-.text:00000000004004E6 main endp
+.text:00012C7B                 call    ds:ExAllocatePoolWithTag
+.text:00012C81                 mov     P, eax
+.text:00012C86                 cmp     P, 0
+.text:00012C8D                 jnz     short loc_12C99
+.text:00012C8F                 mov     eax, 0C000009Ah
+.text:00012C94                 jmp     loc_12E83
+.text:00012C99 ; ---------------------------------------------------------------------------
+.text:00012C99
+.text:00012C99 loc_12C99:                              ; CODE XREF: sub_12C20+6Dj
+.text:00012C99                 mov     ecx, 200h
+.text:00012C9E                 xor     eax, eax
+.text:00012CA0                 mov     edi, P
+.text:00012CA6                 rep stosd
+.text:00012CA8                 mov     edx, [ebp+arg_0]
+.text:00012CAB                 push    edx             ; wchar_t *
+.text:00012CAC                 call    ds:__imp_wcslen
+.text:00012CB2                 add     esp, 4
+.text:00012CB5                 push    eax             ; size_t
+.text:00012CB6                 mov     eax, [ebp+arg_0]
+.text:00012CB9                 push    eax             ; wchar_t *
+.text:00012CBA                 mov     ecx, P
+.text:00012CC0                 push    ecx             ; wchar_t *
+.text:00012CC1                 call    ds:__imp_wcsncpy
 {% endhighlight %}
 
 ### WinDbg
