@@ -1,8 +1,8 @@
 ---
 layout: post
-category : exploit
+category : template
 tagline: "Supporting tagline"
-tags : [hello, world]
+tags : [template]
 ---
 {% include JB/setup %}
 

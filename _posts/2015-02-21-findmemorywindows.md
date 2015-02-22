@@ -1,9 +1,9 @@
 ---
 layout: post
 title: "findMemoryWindows()"
-category: exploit
+category: expdev
 tagline: "Supporting tagline"
-tags: [exploit]
+tags: [explib, kernel]
 ---
 {% include JB/setup %}
 
