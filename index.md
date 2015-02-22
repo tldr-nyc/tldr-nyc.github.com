@@ -5,7 +5,7 @@ tagline: Supporting tagline
 ---
 {% include JB/setup %}
 
-## Posts List
+## Deadlisting
 
 <ul class="posts">
   {% for post in site.posts %}
