@@ -7,6 +7,17 @@ tags: [exploit]
 ---
 {% include JB/setup %}
 
+## findMemoryWindows()
+
+### struct _PUBLIC_OBJECT_TYPE_INFORMATION
+{% highlight C %}
+typedef struct _PUBLIC_OBJECT_TYPE_INFORMATION{
+	UNICODE_STRING	TypeName;
+	ULONG			Reserved[0x2048];
+} PUBLIC_OBJECT_TYPE_INFORMATION, *PPUBLIC_OBJECT_TYPE_INFORMATION;
+{% endhighlight %}
+
+### findMemoryWindows()
 {% highlight C %}
 VOID findMemoryWindows(){
 
