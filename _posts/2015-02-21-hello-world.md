@@ -1,6 +1,6 @@
 ---
 layout: post
-category : template
+category : exploit
 tagline: "Supporting tagline"
 tags : [hello, world]
 ---
