@@ -1,6 +1,6 @@
 ---
 layout: page
-title: TL;DR-NYC
+title: README.md
 tagline: Supporting tagline
 ---
 {% include JB/setup %}
