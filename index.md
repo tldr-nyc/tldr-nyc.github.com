@@ -5,11 +5,11 @@ tagline: Supporting tagline
 ---
 {% include JB/setup %}
 
-This is my notepad.
+"Deadlisting reverse engineering, as +ORC calls it, is a slow 'puzzle solving' process: the intellectual challenge can be extremely interesting."
 
 ## Deadlisting
 
-"Deadlisting reverse engineering, as +ORC calls it, is a slow 'puzzle solving' process: the intellectual challenge can be extremely interesting."
+This is my notepad. 
 
 <ul class="posts">
   {% for post in site.posts %}
