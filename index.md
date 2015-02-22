@@ -12,7 +12,7 @@ Well, that escalated quickly..
 ## idaq.exe
 -->
 
-Oh, and this is my notepad.
+Oh, and this is my personal notepad.
 
 <ul class="posts">
   {% for post in site.posts %}
