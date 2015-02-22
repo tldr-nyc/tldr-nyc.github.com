@@ -1,6 +1,6 @@
 ---
 layout: page
-title: README.md
+title: readme.txt
 tagline: Supporting tagline
 ---
 {% include JB/setup %}
