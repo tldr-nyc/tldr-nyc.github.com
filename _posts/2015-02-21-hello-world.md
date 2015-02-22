@@ -10,7 +10,7 @@ Syntax highlighting...
 
 ## Hello Word!
 
-### C
+## C
 
 This is a test!
 
@@ -24,13 +24,13 @@ main()
 }
 {% endhighlight %}
 
-### Ruby
+## Ruby
 
 {% highlight Ruby %}
 puts 'Hello world'
 {% endhighlight %}
 
-### IDA
+## IDA
 
 {% highlight ASM %}
 .text:00000000004004D0 main proc near
