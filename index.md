@@ -7,7 +7,9 @@ tagline: Supporting tagline
 
 "Deadlisting reverse engineering, as +ORC calls it, is a slow 'puzzle solving' process: the intellectual challenge can be extremely interesting."
 
+<!--
 ## idaq.exe
+-->
 
 This is my notepad. 
 
