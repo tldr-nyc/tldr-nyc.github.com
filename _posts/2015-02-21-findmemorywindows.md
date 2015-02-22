@@ -10,7 +10,7 @@ tags: [exploit]
 ## findMemoryWindows()
 
 ### struct _PUBLIC_OBJECT_TYPE_INFORMATION
-{% highlight C linenos=table %}
+{% highlight C linenos %}
 typedef struct _PUBLIC_OBJECT_TYPE_INFORMATION{
 	UNICODE_STRING	TypeName;
 	ULONG			Reserved[0x2048];
@@ -18,7 +18,7 @@ typedef struct _PUBLIC_OBJECT_TYPE_INFORMATION{
 {% endhighlight %}
 
 ### findMemoryWindows()
-{% highlight C linenos=table %}
+{% highlight C linenos %}
 VOID findMemoryWindows(){
 
 	PSYSTEM_HANDLE_INFORMATION_EX handleInfo;
