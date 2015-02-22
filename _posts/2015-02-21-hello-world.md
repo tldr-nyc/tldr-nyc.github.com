@@ -45,7 +45,7 @@ puts 'Hello world'
 {% endhighlight %}
 
 ### WinDbg
-{% highlight ASM %}
+{% highlight C %}
 (4f0.d48): Access violation - code c0000005 (first chance)
 First chance exceptions are reported before any exception handling.
 This exception may be expected and handled.
