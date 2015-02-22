@@ -28,6 +28,8 @@ main()
 puts 'Hello world'
 {% endhighlight %}
 
+<!--
 ### Examples
 
 This website is created with Jekyll. [Other Jekyll websites](https://github.com/mojombo/jekyll/wiki/Sites).
+-->
