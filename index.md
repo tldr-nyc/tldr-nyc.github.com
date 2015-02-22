@@ -5,9 +5,10 @@ tagline: Supporting tagline
 ---
 {% include JB/setup %}
 
-"Deadlisting reverse engineering, as +ORC calls it, is a slow 'puzzle solving' process: the intellectual challenge can be extremely interesting."
+Well, that escalated quickly.
 
-<!--
+<!---"Deadlisting reverse engineering, as +ORC calls it, is a slow 'puzzle solving' process: the intellectual challenge can be extremely interesting."
+
 ## idaq.exe
 -->
 
