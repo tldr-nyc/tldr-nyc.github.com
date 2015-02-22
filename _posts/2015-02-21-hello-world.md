@@ -12,6 +12,8 @@ Syntax highlighting...
 
 ### C
 
+This is a test!
+
 {% highlight C %}
 #include<stdio.h>
 
@@ -21,6 +23,10 @@ main()
 
 }
 {% endhighlight %}
+
+
+
+
 
 
 ### Ruby
