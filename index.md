@@ -1,6 +1,6 @@
 ---
 layout: page
-title: readme.txt
+title: /dev/random
 tagline: Supporting tagline
 ---
 {% include JB/setup %}
