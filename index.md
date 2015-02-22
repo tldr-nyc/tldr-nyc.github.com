@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Hello World!
+title: TL;DR-NYC
 tagline: Supporting tagline
 ---
 {% include JB/setup %}
@@ -13,6 +13,6 @@ tagline: Supporting tagline
   {% endfor %}
 </ul>
 
-## EOL
+## Happy Deadlisting!
 
 
