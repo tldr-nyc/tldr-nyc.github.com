@@ -5,14 +5,14 @@ tagline: Supporting tagline
 ---
 {% include JB/setup %}
 
-Well, that escalated quickly.
+Well, that escalated quickly..
 
 <!---"Deadlisting reverse engineering, as +ORC calls it, is a slow 'puzzle solving' process: the intellectual challenge can be extremely interesting."
 
 ## idaq.exe
 -->
 
-This is my notepad. 
+Oh, and this is my notepad.
 
 <ul class="posts">
   {% for post in site.posts %}
