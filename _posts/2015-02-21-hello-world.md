@@ -32,7 +32,7 @@ puts 'Hello world'
 
 ### IDA Pro
 
-{% highlight Assembly %}
+{% highlight ASM %}
 .text:00012C7B                 call    ds:ExAllocatePoolWithTag
 .text:00012C81                 mov     P, eax
 .text:00012C86                 cmp     P, 0
@@ -59,7 +59,7 @@ puts 'Hello world'
 {% endhighlight %}
 
 ### WinDbg
-{% highlight Assembly %}
+{% highlight ASM %}
 (4f0.d48): Access violation - code c0000005 (first chance)
 First chance exceptions are reported before any exception handling.
 This exception may be expected and handled.
