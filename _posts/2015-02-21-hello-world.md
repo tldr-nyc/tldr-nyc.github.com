@@ -32,7 +32,7 @@ puts 'Hello world'
 
 ### IDA Pro
 
-{% highlight plaintext %}
+{% highlight text %}
 .text:00012C7B                 call    ds:ExAllocatePoolWithTag
 .text:00012C81                 mov     P, eax
 .text:00012C86                 cmp     P, 0
