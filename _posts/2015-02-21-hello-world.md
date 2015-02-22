@@ -30,7 +30,7 @@ puts 'Hello world'
 
 ### IDA
 
-{% highlight IDA %}
+{% highlight C %}
 .text:00000000004004D0 main proc near
 .text:00000000004004D0 48 83 EC 08 sub rsp, 8
 .text:00000000004004D4 BF E8 05 40 00 mov edi, offset format ; "hello, world\n"
@@ -41,6 +41,7 @@ puts 'Hello world'
 .text:00000000004004E6 C3 retn
 .text:00000000004004E6 main endp
 {% endhighlight %}
+
 <!--
 ### Examples
 
