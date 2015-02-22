@@ -136,7 +136,7 @@ VOID findMemoryWindows(){
 }
 {% endhighlight %}
 
-### BOOL getHandles(PSYSTEM_HANDLE_INFORMATION_EX* handleInfo)
+### getHandles(PSYSTEM_HANDLE_INFORMATION_EX* handleInfo)
 {% highlight C %}
 BOOL getHandles(PSYSTEM_HANDLE_INFORMATION_EX* handleInfo)
 {
