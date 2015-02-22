@@ -32,7 +32,7 @@ puts 'Hello world'
 
 ### IDA Pro
 
-{% codeblock %}
+{% highlight plaintext %}
 .text:00012C7B                 call    ds:ExAllocatePoolWithTag
 .text:00012C81                 mov     P, eax
 .text:00012C86                 cmp     P, 0
@@ -56,7 +56,7 @@ puts 'Hello world'
 .text:00012CBA                 mov     ecx, P
 .text:00012CC0                 push    ecx             ; wchar_t *
 .text:00012CC1                 call    ds:__imp_wcsncpy
-{% endcodeblock %}
+{% endhighlight %}
 
 ### WinDbg
 {% highlight ASM %}
