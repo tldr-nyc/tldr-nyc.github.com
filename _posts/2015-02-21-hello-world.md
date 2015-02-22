@@ -14,7 +14,7 @@ Syntax highlighting...
 
 This is a test!
 
-{% highlight C %}
+{% highlight C linenos %}
 #include<stdio.h>
 
 main()

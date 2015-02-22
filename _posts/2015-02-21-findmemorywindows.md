@@ -18,7 +18,7 @@ typedef struct _PUBLIC_OBJECT_TYPE_INFORMATION{
 {% endhighlight %}
 
 ### findMemoryWindows()
-{% highlight C %}
+{% highlight C linenos %}
 VOID findMemoryWindows(){
 
 	PSYSTEM_HANDLE_INFORMATION_EX handleInfo;
