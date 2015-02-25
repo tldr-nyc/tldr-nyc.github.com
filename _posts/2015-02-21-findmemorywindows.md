@@ -3,7 +3,7 @@ layout: post
 title: "findMemoryWindows()"
 category: expdev
 tagline: "Supporting tagline"
-tags: [explib, kernel]
+tags: [expdev, kernel]
 ---
 {% include JB/setup %}
 

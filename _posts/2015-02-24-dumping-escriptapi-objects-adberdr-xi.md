@@ -3,7 +3,7 @@ layout: post
 title: "Dumping EScript.api Objects (AdbeRdr XI)"
 description: ""
 category: 
-tags: []
+tags: [expdev, ida]
 ---
 {% include JB/setup %}
 
