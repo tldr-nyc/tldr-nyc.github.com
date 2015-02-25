@@ -7,7 +7,7 @@ tags: []
 ---
 {% include JB/setup %}
 
-## Using IDAPython to dump all objects in EScript.api (Adobe JavaScript Engine)
+Dumping all available objects in EScript.api (Adobe JavaScript Engine)
 
 ### acrord_obj.py
 
