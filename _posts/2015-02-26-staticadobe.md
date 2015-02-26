@@ -2,8 +2,8 @@
 layout: post
 title: "staticadobe.py"
 description: ""
-category: 
-tags: []
+category: expdev
+tags: [expdev, ida]
 ---
 {% include JB/setup %}
 
@@ -36,7 +36,9 @@ def acroEvent(ptrAllowedEvents, counterAllowedEvents):
     print ""
     
 def acroSecPriv(ptrSecurity):
+
 	# Security Priviledge Structure
+
     addr = ptrSecurity
     offset = 0
     
