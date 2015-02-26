@@ -1,6 +1,6 @@
 ---
 layout: page
-title: /dev/random
+title: ""
 tagline: Supporting tagline
 ---
 {% include JB/setup %}
