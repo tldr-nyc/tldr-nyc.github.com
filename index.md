@@ -1,5 +1,6 @@
 ---
 layout: page
+title: "TL;DR-NYC's /dev/random"
 tagline: Supporting tagline
 ---
 {% include JB/setup %}
