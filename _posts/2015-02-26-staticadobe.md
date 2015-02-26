@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "staticadobe.py Console Output"
+title: "staticadobe.py"
 description: ""
 category: 
 tags: []
