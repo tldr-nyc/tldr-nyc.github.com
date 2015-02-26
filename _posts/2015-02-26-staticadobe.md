@@ -7,6 +7,183 @@ tags: []
 ---
 {% include JB/setup %}
 
+Decoding EScript.api JavaScript structures
+
+### staticadobe.py
+
+{% highlight Python %}
+#import wingdbstub
+#wingdbstub.Ensure()
+
+from idaapi import *
+
+def acroEvent(ptrAllowedEvents, counterAllowedEvents):
+    
+    addr = ptrAllowedEvents
+    for i in range(0, counterAllowedEvents):
+        #Event Type [ptr to "App"]
+        ptrEventType = Dword(addr)
+        EventType = GetString(ptrEventType, -1, ASCSTR_C)
+        addr += 4
+        
+        # Event Name [ptr to "Init"]
+        ptrEventName = Dword(addr)
+        EventName = GetString(ptrEventName, -1, ASCSTR_C)
+        addr += 4
+        
+        print "\t\t\tEvent: %s\%s" % (EventType, EventName)
+    
+    print ""
+    
+def acroSecPriv(ptrSecurity):
+	# Security Priviledge Structure
+    addr = ptrSecurity
+    offset = 0
+    
+    # Unkown * 2 + Always Zero [0x0, 0x0, 0x0]
+    # print "\t\tOffset +0x%02x ???" % offset
+    addr += 12
+    offset += 12
+    
+    # ptrPerms (document permissions, ex: Perm to Print, Save, etc.) [0x0]
+    ptrPerms = Dword(addr)
+    # print "\t\tOffset +0x%02x ptrPerms 0x%08x" % (offset, ptrPerms)
+    addr += 4
+    offset += 4
+    
+    # Perms counter [0x0]
+    counterPerms = Dword(addr)
+    # print "\t\tOffset +0x%02x counterPerms 0x%08x" % (offset, counterPerms)
+    addr += 4
+    offset += 4
+    
+    # Allowed Events [ptr to Event List]
+    ptrAllowedEvents = Dword(addr)
+    # print "\t\tOffset +0x%02x ptrAllowedEvents 0x%08x" % (offset, ptrAllowedEvents)
+    addr += 4
+    offset += 4
+    
+    # Allowed Events counter [0x2]
+    counterAllowedEvents = Dword(addr)
+    # print "\t\tOffset +0x%02x counterAllowedEvents 0x%08x\n" % (offset, counterAllowedEvents)
+    addr += 4
+    offset += 4
+    if(counterAllowedEvents != 0x0):
+        acroEvent(ptrAllowedEvents, counterAllowedEvents)
+
+def acroMembers(ptrMembers, counterMembers):
+
+	# [Object 0x09] Address: 0x23949df8
+    # Offset +0x00 MemberName "browseForDoc"
+    # Offset +0x04 ptrSecurityGetter    0x00000000
+    # Offset +0x08 ptrSecuritySetter    0x00000000
+    # Offset +0x0c ptrSecurityMethod    0x23949a20 <-- Security Priviledge Structure
+    # Offset +0x10 ptrArgInfo           0x23947f80
+    # Offset +0x14 counterArgInfo       0x00000006
+    # Offset +0x18 ???                  0x00000002
+    # Offset +0x1c ???                  0x00000004
+
+    addr = ptrMembers
+    for i in range(0, counterMembers):
+        offset = 0
+        # print "\t[Member 0x%02x] Address: 0x%08x" % (i, addr)
+        
+        
+        # Member Name [eg. ptr to "browseForDoc"]
+        ptrMemberName = Dword(addr)
+        MemberName = GetString(ptrMemberName, -1, ASCSTR_C)
+        print "\tMember \"%s\"" % MemberName
+        addr += 4
+        offset += 4
+        
+        # Security Privileges (Getter) [0x0]
+        ptrSecurityGetter = Dword(addr)
+        # print "\tOffset +0x%02x ptrSecurityGetter 0x%08x" % (offset, ptrSecurityGetter)
+        addr += 4
+        offset += 4
+        
+        # Security Privileges (Setter) [0x0]
+        ptrSecuritySetter = Dword(addr)
+        # print "\tOffset +0x%02x ptrSecuritySetter 0x%08x" % (offset, ptrSecuritySetter)
+        addr += 4
+        offset += 4
+        
+        # Security Privileges (Method)
+        ptrSecurityMethod = Dword(addr)
+        # print "\tOffset +0x%02x ptrSecurityMethod 0x%08x" % (offset, ptrSecurityMethod)
+        addr += 4
+        offset += 4
+        
+        # Arguments Information [0x0]
+        ptrArgInfo = Dword(addr)
+        # print "\tOffset +0x%02x ptrArgInfo 0x%08x" % (offset, ptrArgInfo)
+        addr += 4
+        offset += 4
+        
+        # ArgInfo Counter [0x0]
+        counterArgInfo = Dword(addr)
+        # print "\tOffset +0x%02x counterArgInfo 0x%08x" % (offset, counterArgInfo)
+        addr += 4
+        offset += 4
+        
+        # ???
+        unknown1 = Dword(addr)
+        # print "\tOffset +0x%02x ??? 0x%08x" % (offset, unknown1)
+        addr += 4
+        offset += 4
+        
+        # ???
+        unknown2 = Dword(addr)
+        # print "\tOffset +0x%02x ??? 0x%08x\n" % (offset, unknown2)
+        addr += 4
+        offset += 4
+        
+        if(ptrSecurityMethod != 0x0):
+            print "\t\tSecurity Priviledged for Method, have a list of allowed Events:"
+            acroSecPriv(ptrSecurityMethod)
+        if(ptrSecurityGetter != 0x0):
+            print "\t\tSecurity Priviledged for Getter - (property?)"
+            acroSecPriv(ptrSecurityGetter)
+        if(ptrSecuritySetter != 0x0):
+            print "\t\tSecurity Priviledged for Setter - (property?)"
+            acroSecPriv(ptrSecuritySetter)         
+
+if __name__ == '__main__':
+    
+    addr = 0x23975798
+    for x in range(0, 221):
+        offset = 0
+        
+        #print "[Object %d] Address: 0x%08x" % (x, addr)
+        # Object Name [ptr to "App"]
+        ptrObjectName = Dword(addr)
+        ObjectName = GetString(ptrObjectName, -1, ASCSTR_C)
+        print "Object \"%s\"" % ObjectName
+        addr += 4
+        offset += 4
+        
+        # Unknown [0x0]
+        # print "Offset +0x%02x ???" % offset
+        addr += 4
+        offset += 4
+        
+        # Members [ptr to 5C Members Structures]
+        ptrMembers = Dword(addr)
+        # print "Offset +0x%02x ptrMembers 0x%08x" % (offset, ptrMembers)
+        addr += 4
+        offset += 4
+        
+        # Members counter [0x5c]
+        counterMembers = Dword(addr)
+        # print "Offset +0x%02x counterMembers = 0x%x\n" % (offset, counterMembers)
+        addr += 4
+        offset += 4
+        
+        acroMembers(ptrMembers, counterMembers)
+{% endhighlight %}
+
+### Console
+
 {% highlight text %}
 Object "actions"
 	Member "Convert"
@@ -80,23 +257,23 @@ Object "Aggregate"
 	Member "__NOPROPS__"
 Object "AggregateFormWorkflowInfo"
 	Member "sectionFeed"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "setHandler"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 Object "AggregateReviewInfo"
 	Member "sectionFeed"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "setHandler"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -146,13 +323,13 @@ Object "AnyName"
 Object "App"
 	Member "activeDocs"
 	Member "addMenuItem"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "addressBookAvailable"
 	Member "addSubMenu"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Console\Exec
 			Event: App\Init
 
@@ -162,12 +339,12 @@ Object "App"
 	Member "beep"
 	Member "beginPriv"
 	Member "browseForDoc"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: App\Init
 			Event: Console\Exec
 
 	Member "browseForMultipleDocs"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: App\Init
 			Event: Console\Exec
 
@@ -179,7 +356,7 @@ Object "App"
 	Member "CTversion"
 	Member "doc"
 	Member "endPriv"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -203,7 +380,7 @@ Object "App"
 	Member "fullscreen"
 	Member "getNthPlugInName"
 	Member "getPath"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -212,19 +389,19 @@ Object "App"
 	Member "goBack"
 	Member "goForward"
 	Member "hideMenuItem"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "hideToolbarButton"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "ignoreNextDoc"
 	Member "ignoreXFA"
 	Member "isValidSaveLocation"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -234,13 +411,13 @@ Object "App"
 	Member "listToolbarButtons"
 	Member "loadPolicyFile"
 	Member "mailGetAddrs"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "mailMsg"
 	Member "mailMsgWithAttachment"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -249,12 +426,12 @@ Object "App"
 	Member "monitors"
 	Member "newCollection"
 	Member "newDoc"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "newFDF"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -262,7 +439,7 @@ Object "App"
 	Member "numPlugIns"
 	Member "openDoc"
 	Member "openFDF"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -288,19 +465,19 @@ Object "App"
 	Member "toolbarHorizontal"
 	Member "toolbarVertical"
 	Member "trustedFunction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "trustPropagatorFunction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "user"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -384,23 +561,23 @@ Object "bookletDuplexModes"
 Object "Bookmark"
 	Member "children"
 	Member "color"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "createChild"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "doc"
 	Member "execute"
 	Member "insertChild"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "name"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "open"
 	Member "parent"
 	Member "remove"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setAction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "style"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "toString"
 	Member "valueOf"
 Object "Boolean"
@@ -418,20 +595,20 @@ Object "capabilities_viewer"
 	Member "sponsoredContentVersion"
 Object "Catalog"
 	Member "getIndex"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "isIdle"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 	Member "jobs"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 	Member "remove"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 Object "CatalogJob"
 	Member "path"
 	Member "status"
 	Member "type"
 Object "Certificate"
 	Member "binary"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -463,96 +640,96 @@ Object "Checkbox"
 Object "Collab"
 	Member "addAnnotStore"
 	Member "addDocToDocsOpenedByWizard"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "addedAnnotCount"
 	Member "addReviewFolder"
 	Member "addReviewServer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "addStateModel"
 	Member "AFCheckSubmitButtonStatus"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "AFPrepareFormForDistribution"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "alertWithHelp"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "allReviewServers"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "animateSyncButton"
 	Member "AVUMAddStringToPayloadWrapper"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "AVUMEndPayloadWrapper"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "AVUMLogEventWrapper"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "AVUMStartPayloadWrapper"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "beginInitiatorMailOperation"
 	Member "bringToFront"
 	Member "browseForFolder"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "browseForNetworkFolder"
 	Member "canCollapseTrackerSelection"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "canExpandTrackerSelection"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "canProxy"
 	Member "collapseTrackerSelection"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "convertDIPathToPlatformPath"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "convertMappedDrivePathToSMBURL"
 	Member "convertPlatformPathToDIPath"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "copyMe"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -561,31 +738,31 @@ Object "Collab"
 	Member "createUniqueDocID"
 	Member "dcSignup"
 	Member "debugPrintln"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "defaultStore"
 	Member "disableDocCentreSignup"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "docCenterHomeURL"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "docCenterURL"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "docID"
 	Member "documentToStream"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "drivers"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -593,86 +770,86 @@ Object "Collab"
 	Member "enableFinalApprovalEmail"
 	Member "endInitiatorMailOperation"
 	Member "expandTrackerSelection"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "finalApprovalEmailEnabled"
 	Member "GetActiveDocIW"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getAggregateReviewInfo"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getAlwaysUseServer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getCCaddr"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getCustomEmailMessage"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getDateAndTime"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getDebugHostedServicesSettings"
 	Member "getDefaultDateAndTime"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getDocCenterReviewServer"
 	Member "getEmailDistributionReviewServer"
 	Member "getFdfUrl"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getFullyQualifiedHostname"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getIcon"
 	Member "getIdentity"
 	Member "getNumberOfReviewsOnServer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getProgressInfo"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getProxy"
 	Member "getReviewError"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getReviewFolder"
 	Member "getReviewFolders"
 	Member "getReviewInfo"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getReviewState"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -682,7 +859,7 @@ Object "Collab"
 	Member "getStoreNoSettings"
 	Member "getStoreSettings"
 	Member "getUserIDFromStore"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -690,43 +867,43 @@ Object "Collab"
 	Member "hashString"
 	Member "hasInitiatorEmailRequest"
 	Member "hasReviewCommentRepositoryIntact"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "hasReviewDeadline"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "hasSynchonizer"
 	Member "haveOfflineReviews"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "haveReviews"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "init"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "initiatorEmail"
 	Member "invite"
 	Member "isApprovalWorkflow"
 	Member "isDisplayBezelEnabled"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "isDocCenterURL"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "isDocCentreSignupDisabled"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -735,7 +912,7 @@ Object "Collab"
 	Member "isDocReadOnly"
 	Member "isEmailReview"
 	Member "isFirstLaunch"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -745,14 +922,14 @@ Object "Collab"
 	Member "isPathWritable"
 	Member "isSharedReview"
 	Member "isSynchronizerIconShown"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "isUbiquitized"
 	Member "lastBBRURL"
 	Member "launchHelpViewer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "makeAllCommentsReadOnly"
 	Member "maxPDFCommentsSize"
 	Member "modifiedAnnotCount"
@@ -762,15 +939,15 @@ Object "Collab"
 	Member "registerApproval"
 	Member "registerProxy"
 	Member "registerReview"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "removeApprovalDocScript"
 	Member "removeDocsOpenedByWizard"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "removeMultipleSelectedReviewsInTracker"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -778,40 +955,40 @@ Object "Collab"
 	Member "removeStateModel"
 	Member "returnToInitiator"
 	Member "reviewersEmail"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "reviewServers"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "saveTrackerHTML"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "setAlwaysUseServer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "setCustomEmailMessage"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "setDebugHostedServicesSettings"
 	Member "setDefaultReviewServer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "inEmailWorkflow"
 	Member "setReviewFolder"
 	Member "setReviewFolderForMultipleReviews"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -825,12 +1002,12 @@ Object "Collab"
 	Member "showBasicAuditTrail"
 	Member "stream2CosObj"
 	Member "streamToDocument"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "stringToUTF8"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -838,9 +1015,9 @@ Object "Collab"
 	Member "swConnect"
 	Member "swSendVerifyEmail"
 	Member "sync"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "takeOwnershipAndPublishComments"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -855,17 +1032,17 @@ Object "Collab"
 	Member "unregisterOffline"
 	Member "unregisterReview"
 	Member "unsetAlwaysUseServer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "unsetFirstLaunch"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "updateMountInfo"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -874,7 +1051,7 @@ Object "Collab"
 	Member "uriDeleteFile"
 	Member "uriDeleteFolder"
 	Member "uriEncode"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -989,7 +1166,7 @@ Object "CreatedAVView"
 	Member "end"
 	Member "getFeed"
 	Member "getOptions"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -1059,26 +1236,26 @@ Object "Date"
 	Member "toUTCString"
 Object "Dbg"
 	Member "bps"
-		Security Priviledged for Getter, Have a list of allowed Events
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
+		Security Priviledged for Setter - (property?)
 	Member "c"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "cb"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "q"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "sb"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Console\Exec
 
 	Member "si"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "sn"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "so"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "sv"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 Object "debuggerGlobal"
 	Member "clearInspector"
 	Member "clearStack"
@@ -1144,56 +1321,56 @@ Object "DialogHandler"
 	Member "validate"
 Object "DirConnection"
 	Member "canDoCustomSearch"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "canDoCustomUISearch"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "canDoStandardSearch"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "canList"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "groups"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "name"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "search"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "setOutputFields"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "toString"
 	Member "uiName"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -1201,18 +1378,18 @@ Object "DirConnection"
 	Member "valueOf"
 Object "Directory"
 	Member "connect"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "info"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -1247,63 +1424,63 @@ Object "Doc"
 	Member "ADBE"
 	Member "addAnnot"
 	Member "addField"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "addIcon"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "addLink"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "addNewField"
 	Member "addRecipientListCryptFilter"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "addRequirement"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "addScript"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "addThumbnails"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "addWatermarkFromFile"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "addWatermarkFromText"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "addWatermarkFromTextNoPerms"
 	Member "addWeblinks"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "annotFilter"
 	Member "app"
 	Member "applyRedactions"
 	Member "appRightsSign"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "appRightsValidate"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "author"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "baseURL"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "bookmarkRoot"
 	Member "bringToFront"
 	Member "calculate"
 	Member "calculateNow"
 	Member "certified"
 	Member "certifyInvisibleSign"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -1313,37 +1490,37 @@ Object "Doc"
 	Member "Collab"
 	Member "collection"
 	Member "colorConvertPage"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "createDataObject"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "createIcon"
 	Member "createTemplate"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "creationDate"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "creator"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "dataObjects"
 	Member "delay"
 	Member "deleteIcon"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "deletePages"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "deleteSound"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "DigSigGetUBRightsTest"
 	Member "DigSigUbiquitizeTest"
 	Member "DigSigUnUbiquitizeTest"
 	Member "dirty"
 	Member "disableWindows"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: External\Exec
 
 	Member "disclosed"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: Page\Open
@@ -1357,20 +1534,20 @@ Object "Doc"
 	Member "DoPreflightPDF"
 	Member "dynamicXFAForm"
 	Member "embedDocAsDataObject"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "embedOutputIntent"
 	Member "enableWindows"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: External\Exec
 
 	Member "encryptForRecipients"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "encryptUsingPolicy"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -1383,15 +1560,15 @@ Object "Doc"
 	Member "exportAsXFDF"
 	Member "exportAsXFDFStr"
 	Member "exportDataObject"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "exportXFAData"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "external"
 	Member "extractPages"
 	Member "FileSaveTests"
 	Member "filesize"
 	Member "flattenPages"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "getAnnot"
 	Member "getAnnot3D"
 	Member "getAnnotRichMedia"
@@ -1399,7 +1576,7 @@ Object "Doc"
 	Member "getAnnots3D"
 	Member "getAnnotsRichMedia"
 	Member "getColorConvertAction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "getDataObject"
 	Member "getDataObjectContents"
 	Member "getField"
@@ -1407,7 +1584,7 @@ Object "Doc"
 	Member "getLegalWarnings"
 	Member "getLinks"
 	Member "getModifications"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "getNthFieldName"
 	Member "getNthIconName"
 	Member "getNthTemplate"
@@ -1416,11 +1593,11 @@ Object "Doc"
 	Member "getPageBox"
 	Member "getPageLabel"
 	Member "getPageNthWord"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "getPageNthWordQuads"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "getPageNumWords"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "getPageRotation"
 	Member "getPageTransition"
 	Member "getPreflightAuditTrail"
@@ -1436,24 +1613,24 @@ Object "Doc"
 	Member "hostContainer"
 	Member "icons"
 	Member "importAnFDF"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "importAnXFDF"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "importDataObject"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "importIcon"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "importSound"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "importTextData"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "importXFAData"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "info"
 	Member "innerAppWindowRect"
 	Member "innerDocWindowRect"
 	Member "insertPages"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -1461,22 +1638,22 @@ Object "Doc"
 	Member "isInProtectedView"
 	Member "isModal"
 	Member "keywords"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "layout"
 	Member "mailDoc"
 	Member "mailForm"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "media"
 	Member "metadata"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "modDate"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "mouseX"
 	Member "mouseY"
 	Member "movePage"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "newPage"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -1496,48 +1673,48 @@ Object "Doc"
 	Member "permStatusReady"
 	Member "preflight"
 	Member "print"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "printex"
 	Member "printSeps"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "printSepsWithParams"
 	Member "printWithParams"
 	Member "producer"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "removeDataObject"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "removeField"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "removeIcon"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "removeLinks"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "removePreflightAuditTrail"
 	Member "removeRequirement"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "removeScript"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "removeTemplate"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "removeThumbnails"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "removeWeblinks"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "replacePages"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "requestPermission"
 	Member "requiresFullSave"
 	Member "resetForm"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "rightsManagement"
 	Member "SAPCheckFields"
 	Member "SAPDisableLogging"
@@ -1548,7 +1725,7 @@ Object "Doc"
 	Member "SAPToolbarHide"
 	Member "SAPValueHelp"
 	Member "saveAs"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -1556,55 +1733,55 @@ Object "Doc"
 	Member "securityHandler"
 	Member "selectedAnnots"
 	Member "selectPageNthWord"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setAction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setDataObjectContents"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setOCGOrder"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setPageAction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setPageBoxes"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setPageLabels"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setPageRotations"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setPageTabOrder"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setPageTransitions"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setUIPerms"
 	Member "setUserPerms"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "sounds"
 	Member "spawnPageFromTemplate"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "spellDictionaryOrder"
 	Member "spellLanguageOrder"
 	Member "stampAPFromPage"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "subject"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "submitForm"
 	Member "syncAnnotScan"
 	Member "templates"
 	Member "timestampSign"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "title"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "toString"
 	Member "transitionToState"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "URL"
 	Member "validatePreflightAuditTrail"
 	Member "valueOf"
@@ -1710,62 +1887,62 @@ Object "ExerciserObj"
 	Member "__ALLPROPS__"
 Object "FDF"
 	Member "addContact"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "addEmbeddedFile"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "addRequest"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "close"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "deleteOption"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "isSigned"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 	Member "mail"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "numEmbeddedFiles"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 	Member "save"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signatureClear"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signatureSign"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signatureValidate"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -1774,126 +1951,126 @@ Object "FDF"
 	Member "valueOf"
 Object "Field"
 	Member "alignment"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "bgColor"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "borderColor"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "borderStyle"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "borderWidth"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "browseForFileToSubmit"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "buttonAlignX"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "buttonAlignY"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "buttonFitBounds"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "buttonGetCaption"
 	Member "buttonGetIcon"
 	Member "buttonImportIcon"
 	Member "buttonPosition"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "buttonScaleHow"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "buttonScaleWhen"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "buttonSetCaption"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "buttonSetIcon"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "calcOrderIndex"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "charLimit"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "checkThisBox"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "clear"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "clearItems"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "comb"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "commitOnSelChange"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "currentValueIndices"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "defaultIsChecked"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "defaultStyle"
 	Member "defaultValue"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "delay"
 	Member "deleteItemAt"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "display"
 	Member "doc"
 	Member "doNotScroll"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "doNotSpellCheck"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "editable"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "exportValues"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "fgColor"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "fileSelect"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "fillColor"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "getArray"
 	Member "getItemAt"
 	Member "getLock"
 	Member "hidden"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "highlight"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "insertItemAt"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "isBoxChecked"
 	Member "isDefaultChecked"
 	Member "lineWidth"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "multiline"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "multipleSelection"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "name"
 	Member "numItems"
 	Member "page"
 	Member "password"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "print"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "radiosInUnison"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "readonly"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "rect"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "required"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "richText"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "richValue"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "rotation"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "setAction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setExportValues"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setFocus"
 	Member "setItems"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "setLock"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -1902,13 +2079,13 @@ Object "Field"
 	Member "signatureGetSeedValue"
 	Member "signatureInfo"
 	Member "signatureSetSeedValue"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signatureSign"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -1916,22 +2093,22 @@ Object "Field"
 	Member "signatureValidate"
 	Member "signatureAddLTV"
 	Member "strokeColor"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "style"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "submitName"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "textColor"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "textFont"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "textSize"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "type"
 	Member "userName"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "value"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "valueAsString"
 Object "flagValues"
 	Member "applyOverPrint"
@@ -1959,62 +2136,62 @@ Object "fontPolicies"
 	Member "pageRange"
 Object "FormWorkflow"
 	Member "addFormWorkflowFolder"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getAggregateFormWorkflowInfo"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getFormWorkflowError"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getFormWorkflowFolders"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getFormWorkflowInfo"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getNumberOfFormWorkflowsOnServer"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "haveFormWorkflows"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "removeFormWorkflowFolder"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "removeMultipleSelectedFormWorkflowsInTracker"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "setFormFolderForMultipleForms"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "setFormWorkflowFolder"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "unregisterFormsWorkflow"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -2113,92 +2290,92 @@ Object "IconStream"
 	Member "width"
 Object "Identity"
 	Member "corpAbbrev"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "corporation"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "department"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "email"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "firstName"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "lastName"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "loginName"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
 	Member "name"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -2249,7 +2426,7 @@ Object "Import3D"
 Object "Index"
 	Member "available"
 	Member "build"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -2292,15 +2469,15 @@ Object "JSTOutput"
 	Member "__ALLPROPS__"
 Object "Link"
 	Member "borderColor"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "borderWidth"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "highlightMode"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "rect"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "setAction"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 Object "Lock"
 	Member "action"
 	Member "fields"
@@ -2345,7 +2522,7 @@ Object "Markup"
 	Member "dash"
 	Member "delay"
 	Member "destroy"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "doc"
 	Member "doCaption"
 	Member "fillColor"
@@ -2385,7 +2562,7 @@ Object "Markup"
 	Member "rotate"
 	Member "seqNum"
 	Member "setProps"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "soundIcon"
 	Member "state"
 	Member "stateModel"
@@ -2397,7 +2574,7 @@ Object "Markup"
 	Member "toggleNoView"
 	Member "toString"
 	Member "transitionToState"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "type"
 	Member "uiIcon"
 	Member "uiType"
@@ -2536,16 +2713,16 @@ Object "Net.Discovery"
 	Member "resolveService"
 Object "Net.HTTP"
 	Member "request"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "runTaskSet"
 Object "Net.SOAP"
 	Member "connect"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "request"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "response"
 Object "Net.Subscriptions"
 	Member "addFeed"
@@ -2594,14 +2771,14 @@ Object "OCG"
 	Member "constants"
 	Member "getIntent"
 	Member "initState"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "locked"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "name"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "setAction"
 	Member "setIntent"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "state"
 	Member "toString"
 	Member "valueOf"
@@ -2829,7 +3006,7 @@ Object "Report"
 	Member "color"
 	Member "columns"
 	Member "copyContentFromDoc"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -2843,7 +3020,7 @@ Object "Report"
 	Member "print"
 	Member "Report"
 	Member "save"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3028,28 +3205,28 @@ Object "Row"
 	Member "columnArray"
 Object "RSS"
 	Member "addFeed"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "addUI"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "feeds"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getContents"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getResourceContents"
 	Member "removeFeed"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3084,7 +3261,7 @@ Object "ScreenAnnotProto"
 	Member "page"
 	Member "player"
 	Member "rect"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "setFocus"
 Object "Script"
 	Member "compile"
@@ -3109,7 +3286,7 @@ Object "Search"
 	Member "ignoreAccents"
 	Member "ignoreAsianCharacterWidth"
 	Member "indexes"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3126,7 +3303,7 @@ Object "Search"
 	Member "query"
 	Member "refine"
 	Member "removeIndex"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3136,7 +3313,7 @@ Object "Security"
 	Member "APSHandler"
 	Member "chooseRecipientsDialog"
 	Member "chooseSecurityPolicy"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -3149,32 +3326,32 @@ Object "Security"
 	Member "EncryptTargetAttachments"
 	Member "EncryptTargetDocument"
 	Member "exportToFile"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "getHandler"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "getSecurityPolicies"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "handlers"
 	Member "importFromFile"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "importSettings"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: Field\Mouse Up
@@ -3183,7 +3360,7 @@ Object "Security"
 	Member "StandardHandler"
 	Member "toString"
 	Member "validateSignaturesOnOpen"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -3191,111 +3368,111 @@ Object "Security"
 	Member "valueOf"
 Object "SecurityHandler"
 	Member "appearances"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "digitalIDs"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "directories"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "directoryHandlers"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "docDecrypt"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "docEncrypt"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "isLoggedIn"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "login"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "loginName"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "loginPath"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "logout"
 	Member "name"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "newDirectory"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "newUser"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "setPasswordTimeout"
 	Member "signAuthor"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signFDF"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signInvisible"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signValidate"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "signVisible"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -3303,13 +3480,13 @@ Object "SecurityHandler"
 	Member "stores"
 	Member "toString"
 	Member "uiName"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "validateFDF"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -3351,49 +3528,49 @@ Object "SharedReview"
 	Member "uriNextFile"
 Object "ShareIdentity"
 	Member "Authenticated"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "Corporation"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "Email"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 
 	Member "FullName"
-		Security Priviledged for Getter, Have a list of allowed Events
+		Security Priviledged for Getter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
 			Event: App\Calculate
 
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 			Event: Batch\Exec
 			Event: Console\Exec
 			Event: App\Init
@@ -3464,21 +3641,21 @@ Object "SignatureParameters"
 	Member "oSecHdlr"
 Object "SOAP"
 	Member "connect"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "queryServices"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "request"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "resolveService"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "response"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "streamDecode"
 	Member "streamDigest"
 	Member "streamEncode"
@@ -3525,7 +3702,7 @@ Object "Span"
 Object "Spell"
 	Member "addDictionary"
 	Member "addWord"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3535,17 +3712,17 @@ Object "Spell"
 	Member "checkWord"
 	Member "customDictionaryClose"
 	Member "customDictionaryCreate"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "customDictionaryDelete"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "customDictionaryExport"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3559,7 +3736,7 @@ Object "Spell"
 	Member "languages"
 	Member "removeDictionary"
 	Member "removeWord"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3633,10 +3810,10 @@ Object "TableInfo"
 	Member "name"
 Object "Template"
 	Member "hidden"
-		Security Priviledged for Setter, Have a list of allowed Events
+		Security Priviledged for Setter - (property?)
 	Member "name"
 	Member "spawn"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 	Member "toString"
 	Member "valueOf"
 Object "Thermometer"
@@ -3694,23 +3871,23 @@ Object "UBRights"
 	Member "valueOf"
 Object "UIDriverObject"
 	Member "canInitiateWorkflow"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "driverURL"
 	Member "getInitiatorConfig"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getInitiatorSource"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
 	Member "getWorkspaceCreator"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
@@ -3719,7 +3896,7 @@ Object "UIDriverObject"
 	Member "initiatorDescription"
 	Member "initiatorName"
 	Member "isDocCenterWorkflow"
-		Security Priviledged for Method, Have a list of allowed Events
+		Security Priviledged for Method, have a list of allowed Events:
 			Event: Batch\Exec
 			Event: Console\Exec
 
