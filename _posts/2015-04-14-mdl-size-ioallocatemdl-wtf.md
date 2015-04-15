@@ -38,9 +38,10 @@ LABEL_8:
 }
 {% endhighlight %}
 
-https://github.com/JeremyFetiveau/Exploits/blob/master/MS14-040.cpp
-@OS: Win8x64FRE
-@Src: MS14-040.cpp
+https://github.com/JeremyFetiveau/Exploits/blob/master/MS14-040.cpp    
+@OS: Win8x64FRE    
+@Src: MS14-040.cpp    
+
 {% highlight C %}
 UINT32 vaddr = 0x13371337;
 UINT32 targetSize = 0x100; // >= 0x100
@@ -48,9 +49,10 @@ UINT32 mdlsize = (pow(2.0, 0x0c) * (targetSize - 0x30) / 8) - 0xfff - (vaddr & 0
 {% endhighlight %}
 
 
-http://www.secniu.com/cve-2014-1767-afd-sys-double-free-vulnerability-analysis-and-exploit/
-@OS: Win7x86FRE
-@Src: afd_1767_win32_Exp.cpp
+http://www.secniu.com/cve-2014-1767-afd-sys-double-free-vulnerability-analysis-and-exploit/    
+@OS: Win7x86FRE    
+@Src: afd_1767_win32_Exp.cpp    
+
 {% highlight C %}
 // 0xA0 == WorkFactory Allocated Object Size
 const DWORD FakeObjSize = 0xA0 ;
