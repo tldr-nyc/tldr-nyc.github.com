@@ -7,8 +7,9 @@ tags: []
 ---
 {% include JB/setup %}
 
-@OS: Win7x86FRE
-@arget: ntoskrnl.exe (6.1.7600.16385)
+@OS: Win7x86FRE    
+@arget: ntoskrnl.exe (6.1.7600.16385)     
+
 
 {% highlight C %}
 PMDL __stdcall IoAllocateMdl(PVOID VirtualAddress, ULONG Length, BOOLEAN SecondaryBuffer, BOOLEAN ChargeQuota, PIRP Irp)
