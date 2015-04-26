@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "MDL Size (IoAllocateMdl)? WTF?"
+title: "MDL Size (IoAllocateMdl)"
 description: ""
 category: 
-tags: []
+tags: [ida]
 ---
 {% include JB/setup %}
 
